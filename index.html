@@ -1,275 +1,538 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Malabar LED House - Quotation Generator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quotation Generator - Malabar LED House</title>
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { margin: 0; background: #f0f2f5; display: flex; height: 100vh; }
-    
-    /* Left Entry Panel */
-    .editor-panel {
-      width: 420px;
-      background: #ffffff;
-      border-right: 1px solid #ddd;
-      padding: 20px;
-      overflow-y: auto;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    :root {
+      --primary-red: #d31e28;
+      --border-color: #222;
+      --font-family: Arial, Helvetica, sans-serif;
     }
-    .editor-panel h2 { margin-top: 0; font-size: 18px; color: #1a365d; }
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 12px; font-weight: 600; color: #4a5568; margin-bottom: 4px; }
-    .form-group input, .form-group textarea {
-      width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;
-    }
-    .form-group textarea { resize: vertical; }
-    .btn-group { display: flex; gap: 8px; margin-top: 15px; }
-    button {
-      flex: 1; padding: 10px 12px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; transition: 0.2s;
-    }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-primary:hover { background: #1d4ed8; }
-    .btn-success { background: #16a34a; color: #fff; }
-    .btn-success:hover { background: #15803d; }
-    #status-msg { font-size: 12px; margin-top: 8px; color: #2563eb; text-align: center; }
 
-    /* Right Preview Layout (A4 Sheet matching current PDF) */
-    .preview-container {
-      flex: 1; overflow-y: auto; padding: 30px; display: flex; justify-content: center;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family);
     }
-    .page-a4 {
+
+    body {
+      background-color: #f1f3f5;
+      color: #111;
+      padding: 20px;
+    }
+
+    /* Top Controls Bar (Hidden in Print) */
+    .controls-panel {
+      max-width: 840px;
+      margin: 0 auto 20px auto;
+      background: #ffffff;
+      padding: 14px 18px;
+      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+
+    .btn-primary { background: #d31e28; color: #fff; }
+    .btn-primary:hover { background: #b0151f; }
+    .btn-success { background: #198754; color: #fff; }
+    .btn-success:hover { background: #146c43; }
+    .btn-secondary { background: #495057; color: #fff; }
+    .btn-secondary:hover { background: #343a40; }
+
+    .lookup-box {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .lookup-box input {
+      padding: 7px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    /* A4 Quotation Page */
+    .quote-page {
       width: 210mm;
       min-height: 297mm;
-      background: white;
-      padding: 16mm 20mm;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      position: relative;
-      font-size: 13px;
-      line-height: 1.4;
-      color: #111;
+      margin: 0 auto;
+      background: #fff;
+      padding: 14mm 16mm 14mm 16mm;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
-    /* Malabar LED Header Style */
-    .header-box { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; }
-    .company-title { font-size: 24px; font-weight: 800; letter-spacing: 0.5px; margin: 0; color: #b91c1c; }
-    .company-gst { font-weight: bold; font-size: 13px; margin: 3px 0; }
-    .company-address { font-size: 11.5px; color: #222; }
-    .company-phones { font-size: 11.5px; font-weight: bold; margin-top: 2px; }
+    /* Inline Edit Highlight */
+    [contenteditable="true"] {
+      outline: none;
+      transition: background 0.15s;
+    }
+
+    [contenteditable="true"]:hover {
+      background: #fff9db;
+    }
+
+    [contenteditable="true"]:focus {
+      background: #fff3bf;
+      box-shadow: inset 0 0 0 1px #d4a000;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 6px;
+    }
+
+    .company-title {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--primary-red);
+      letter-spacing: 0.5px;
+    }
+
+    .gstin {
+      font-size: 13px;
+      font-weight: bold;
+      margin-top: 2px;
+    }
+
+    .sub-details {
+      font-size: 12px;
+      line-height: 1.4;
+      margin-top: 3px;
+    }
 
     /* Meta Info */
-    .meta-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: 600; }
-    .to-section { margin-bottom: 12px; line-height: 1.4; }
-    .subject-line { font-weight: bold; text-decoration: underline; margin: 10px 0; }
+    .meta-section {
+      margin-top: 14px;
+      font-size: 13px;
+    }
 
-    /* Table Design */
-    table.qtn-table { width: 100%; border-collapse: collapse; margin: 14px 0; }
-    table.qtn-table th, table.qtn-table td { border: 1px solid #333; padding: 7px 9px; vertical-align: top; }
-    table.qtn-table th { background: #f3f4f6; text-align: left; font-size: 12px; }
-    .spec-list { white-space: pre-line; font-size: 12px; }
+    .subject-title {
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      text-decoration: underline;
+      margin-bottom: 12px;
+    }
 
-    /* Bank Details & Signature */
-    .bank-box { border: 1px dashed #555; padding: 10px; width: 60%; margin-top: 15px; font-size: 11.5px; background: #fafafa; }
-    .bank-title { font-weight: bold; margin-bottom: 4px; text-decoration: underline; }
-    .footer-sign { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
-    .sign-box { text-align: right; font-weight: bold; }
+    .ref-date-row {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
 
-    /* Print Setup for Pixel-Perfect PDF */
+    .customer-box {
+      margin-bottom: 10px;
+      line-height: 1.4;
+      white-space: pre-line;
+    }
+
+    .salutation {
+      margin-top: 8px;
+      line-height: 1.45;
+      font-size: 12.5px;
+    }
+
+    /* Items Table */
+    .items-title {
+      font-weight: bold;
+      font-size: 13px;
+      margin: 12px 0 6px 0;
+      text-decoration: underline;
+    }
+
+    table.items-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    table.items-table th, table.items-table td {
+      border: 1px solid var(--border-color);
+      padding: 7px 8px;
+      vertical-align: top;
+    }
+
+    table.items-table th {
+      background: #f4f4f4;
+      font-weight: bold;
+      text-align: left;
+    }
+
+    .col-sl { width: 8%; text-align: center; font-weight: bold; }
+    .col-item { width: 32%; font-weight: bold; }
+    .col-spec { width: 54%; white-space: pre-line; }
+    .col-del { width: 6%; text-align: center; vertical-align: middle; }
+
+    .delete-btn {
+      color: #dc3545;
+      cursor: pointer;
+      font-weight: bold;
+      border: none;
+      background: none;
+      font-size: 15px;
+    }
+
+    .add-row-btn {
+      margin-top: 8px;
+      cursor: pointer;
+      color: #0d6efd;
+      font-size: 12.5px;
+      background: none;
+      border: none;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
+    /* Terms & Notes */
+    .section-subtitle {
+      font-weight: bold;
+      font-size: 12.5px;
+      margin-top: 12px;
+      text-decoration: underline;
+    }
+
+    .terms-box, .notes-box {
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-line;
+      margin-top: 4px;
+    }
+
+    /* Footer Section */
+    .footer-section {
+      margin-top: 18px;
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    /* Bank Details fitted box */
+    .bank-box {
+      display: inline-block;
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      font-size: 12px;
+      line-height: 1.45;
+      background: #fafafa;
+    }
+
+    .bank-box strong {
+      font-size: 12.5px;
+      text-decoration: underline;
+      display: inline-block;
+      margin-bottom: 2px;
+    }
+
+    /* Right-aligned Signatory Box */
+    .signatory-box {
+      text-align: right;
+      font-size: 13px;
+      padding-bottom: 4px;
+    }
+
+    .signatory-box .company-name {
+      font-weight: bold;
+      margin-bottom: 40px; /* Space for physical signature/stamp */
+    }
+
+    .signatory-box .auth-sign {
+      font-weight: bold;
+      border-top: 1px dashed #666;
+      display: inline-block;
+      padding-top: 4px;
+      min-width: 170px;
+      text-align: center;
+    }
+
+    /* Print Rules */
     @media print {
-      body { background: white; margin: 0; padding: 0; }
-      .editor-panel { display: none !important; }
-      .preview-container { padding: 0 !important; margin: 0 !important; }
-      .page-a4 { box-shadow: none !important; margin: 0 !important; width: 100% !important; min-height: 100vh !important; }
-      @page { size: A4; margin: 10mm; }
+      body {
+        background: transparent;
+        padding: 0;
+      }
+
+      .no-print, .col-del, .add-row-btn, .controls-panel {
+        display: none !important;
+      }
+
+      .quote-page {
+        box-shadow: none;
+        margin: 0;
+        width: 100%;
+        min-height: 100vh;
+        padding: 10mm 14mm;
+      }
+
+      [contenteditable="true"]:hover, [contenteditable="true"]:focus {
+        background: transparent !important;
+        box-shadow: none !important;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- LEFT: Form Input -->
-  <div class="editor-panel">
-    <h2>Quotation Details</h2>
-    <div class="form-group">
-      <label>Google Apps Script Web App URL</label>
-      <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/AKfycbw-ViaZSGaF0QGdIO6wej9JOUbtZQR4LmXaX8McrareIEd9PLjuD8gZiWS8eHjidf5pBg/exec">
-    </div>
-    <div class="form-group">
-      <label>Reference No</label>
-      <input type="text" id="inRefNo" value="QTN" oninput="updatePreview()">
-    </div>
-    <div class="form-group">
-      <label>Date</label>
-      <input type="text" id="inDate" value="07-09-2026" oninput="updatePreview()">
-    </div>
-    <div class="form-group">
-      <label>Client Name / Company</label>
-      <input type="text" id="inClientName" value="Client Name" oninput="updatePreview()">
-    </div>
-    <div class="form-group">
-      <label>Client Address</label>
-      <textarea id="inClientAddr" rows="2" oninput="updatePreview()">Address</textarea>
-    </div>
-    <div class="form-group">
-      <label>Subject Title</label>
-      <input type="text" id="inSubject" value="Quotation for " oninput="updatePreview()">
-    </div>
-    <div class="form-group">
-      <label>Product / Item Title</label>
-      <input type="text" id="inItemTitle" value="P10 SMD r" oninput="updatePreview()">
-    </div>
-    <div class="form-group">
-      <label>Specifications (One per line)</label>
-      <textarea id="inSpecs" rows="5" oninput="updatePreview()">details</textarea>
-    </div>
-    <div class="form-group">
-      <label>Pricing & Commercial Terms</label>
-      <textarea id="inPricing" rows="4" oninput="updatePreview()">price</textarea>
+  <!-- Controls Panel -->
+  <div class="controls-panel no-print">
+    <div style="display:flex; gap: 8px;">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <button class="btn btn-success" id="saveBtn" onclick="saveToGoogleSheets()">💾 Save to Sheet</button>
     </div>
 
-    <div class="btn-group">
-      <button class="btn-primary" onclick="window.print()">Print / Save PDF</button>
-      <button class="btn-success" onclick="saveToGoogleSheet()">Save to Sheet</button>
+    <div class="lookup-box">
+      <input type="text" id="lookupRef" placeholder="Enter Ref No..." />
+      <button class="btn btn-secondary" onclick="loadFromGoogleSheets()">Search & Load</button>
     </div>
-    <div id="status-msg"></div>
   </div>
 
-  <!-- RIGHT: Exact Letterhead Copy -->
-  <div class="preview-container">
-    <div class="page-a4">
-      <!-- Fixed Header -->
-      <div class="header-box">
-        <h1 class="company-title">MALABAR LED HOUSE</h1>
-        <div class="company-gst">GSTIN: 32DYMPS3486K1ZP</div>
-        <div class="company-address">
-          AFBA COMPLEX, PUTHIYARA ROAD, CALICUT-04<br>
-          Branch: Sadhoo Building, Fort Road, Kannur
-        </div>
-        <div class="company-phones">
+  <!-- Quotation Document -->
+  <div class="quote-page" id="quoteContainer">
+    <div>
+      <!-- Header -->
+      <div class="header">
+        <div class="company-title">MALABAR LED HOUSE</div>
+        <div class="gstin">GSTIN: 32DYMPS3486K1ZP</div>
+        <div class="sub-details">
+          AFBA COMPLEX, PUTHIYARA ROAD, CALICUT-04<br />
+          Branch: Sadhoo Building, Fort Road, Kannur<br />
           Mob: 8289853114, 8921020922 | Kannur: 9400239470
         </div>
       </div>
 
-      <!-- Quotation Reference & Date -->
-      <div class="meta-row">
-        <div>Ref: <span id="pvRefNo">QTN 2026/11/06/16R</span></div>
-        <div>Date: <span id="pvDate">07-09-2026</span></div>
+      <!-- Meta Info -->
+      <div class="meta-section">
+        <div class="subject-title" id="subjectTitle" contenteditable="true">Quotation for P10 LED Display</div>
+        <div class="ref-date-row">
+          <div>Ref: <span id="refNo" contenteditable="true">QTN 2026/11/06/16R</span></div>
+          <div>Date: <span id="quoteDate" contenteditable="true">07-09-2026</span></div>
+        </div>
+
+        <div style="font-weight: bold;">To,</div>
+        <div class="customer-box" id="customerBox" contenteditable="true">WALKAROO INTERNATIONAL PVT LTD PLOT NO. 56, INKEL,
+INDUSTRIAL GROWTH CENTER, OORAKAM, MELMURI PO, MALAPPURAM - 676519</div>
+
+        <div class="salutation" id="salutationIntro" contenteditable="true">Respected Sir,
+We are the best provider of LED Signage in Malabar with well-executed service backup. As per your requirement, we are pleased to provide you our lowest quotation for the services given below:</div>
       </div>
 
-      <!-- Addressed To -->
-      <div class="to-section">
-        <strong>To,</strong><br>
-        <span id="pvClientName" style="font-weight: 600;">WALKAROO INTERNATIONAL PVT LTD</span><br>
-        <span id="pvClientAddr">PLOT NO. 56, INKEL, INDUSTRIAL GROWTH CENTER, OORAKAM, MELMURI PO, MALAPPURAM - 676519</span>
-      </div>
-
-      <div class="subject-line" id="pvSubject">Subject: Quotation for P10 LED Display</div>
-
-      <p style="margin: 8px 0;">Respected Sir,</p>
-      <p style="margin: 4px 0 12px 0;">
-        We are the best provider of LED Signage in Malabar with well executed service backup. As per your requirement, we are pleased to provide you our lowest quotation for the services given below.
-      </p>
-
-      <strong>Product Details:</strong>
-      <table class="qtn-table">
+      <!-- Item Table -->
+      <div class="items-title">Product Details:</div>
+      <table class="items-table" id="itemsTable">
         <thead>
           <tr>
-            <th style="width: 8%;">SL NO</th>
-            <th style="width: 32%;">Item</th>
-            <th style="width: 60%;">Specification</th>
+            <th class="col-sl">SL NO</th>
+            <th class="col-item">Item</th>
+            <th class="col-spec">Specification</th>
+            <th class="col-del no-print"></th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="tableBody">
           <tr>
-            <td>1</td>
-            <td><strong id="pvItemTitle">P10 SMD LED Display Outdoor</strong></td>
-            <td class="spec-list" id="pvSpecs"></td>
+            <td class="col-sl">1</td>
+            <td class="col-item" contenteditable="true">P10 SMD LED Display Outdoor</td>
+            <td class="col-spec" contenteditable="true">• Module Size - 320mm x 160mm (Brand: Li Glo)
+• Pixel Pitch - 10mm
+• LED - SMD 2727, Red color, Brightness 3000cd/m²
+• Control system: Mobile App - Text & animation
+• Optimum view distance: more than 10m
+• Cabinet: Aluminum, Waterproof Level - IP65
+• Warranty - 1 Year
+• Delivery time - 7 Days after order confirmation</td>
+            <td class="col-del no-print"><button class="delete-btn" title="Delete Row" onclick="deleteRow(this)">✕</button></td>
           </tr>
           <tr>
-            <td>2</td>
-            <td><strong>Size & Price Terms</strong></td>
-            <td class="spec-list" id="pvPricing"></td>
+            <td class="col-sl">2</td>
+            <td class="col-item" contenteditable="true">Size & Price</td>
+            <td class="col-spec" contenteditable="true">LED Cabinet Size: 133 cm X 37 cm - one side
+LED Display Size: 128 cm X 32 cm - one side
+
+Amount: Rs 8,500 + GST 18% = Rs 10,030/-</td>
+            <td class="col-del no-print"><button class="delete-btn" title="Delete Row" onclick="deleteRow(this)">✕</button></td>
           </tr>
         </tbody>
       </table>
+      <button class="add-row-btn no-print" onclick="addRow()">+ Add another item row</button>
 
-      <!-- Fixed Bank Details -->
+      <!-- Terms and Conditions -->
+      <div class="section-subtitle">Terms & Conditions:</div>
+      <div class="terms-box" id="termsBox" contenteditable="true">• Warranty: 1 year
+• Payment: 50% advance, balance on delivery
+• Installation, packing & parcel charges extra
+• Electricity with suitable power load should be provided by customer</div>
+
+      <!-- Notes Section -->
+      <div class="section-subtitle">Notes:</div>
+      <div class="notes-box" id="notesBox" contenteditable="true">• Validity of quotation: 15 days from the date of issue.
+• Above mentioned rates are inclusive of all taxes unless specified otherwise.</div>
+    </div>
+
+    <!-- Footer: Bank Details (Left Fitted) & Signatory (Right) -->
+    <div class="footer-section">
       <div class="bank-box">
-        <div class="bank-title">Bank Details:</div>
-        <strong>MALABAR LED HOUSE</strong><br>
-        Bank: <strong>BANK OF BARODA</strong><br>
-        A/C No: <strong>6879 02 0000 1223</strong><br>
-        IFSC: <strong>BARB0VJFERO</strong><br>
+        <strong>Bank Details:</strong><br />
+        MALABAR LED HOUSE<br />
+        Bank: BANK OF BARODA<br />
+        Bank A/C: 6879 02 0000 1223<br />
+        Bank IFSC: BARB0VJFERO<br />
         Branch: Feroke
       </div>
 
-      <!-- Footer Signoff -->
-      <div class="footer-sign">
-        <div>
-          Thanking You,<br>
-          <em>Electricity with suitable power load should be provided by customer.</em>
-        </div>
-        <div class="sign-box">
-          For MALABAR LED HOUSE<br><br><br>
-          Authorized Signatory
-        </div>
+      <div class="signatory-box">
+        <div class="company-name">For MALABAR LED HOUSE</div>
+        <div class="auth-sign">Authorized Signatory</div>
       </div>
     </div>
   </div>
 
   <script>
-    function updatePreview() {
-      document.getElementById('pvRefNo').innerText = document.getElementById('inRefNo').value;
-      document.getElementById('pvDate').innerText = document.getElementById('inDate').value;
-      document.getElementById('pvClientName').innerText = document.getElementById('inClientName').value;
-      document.getElementById('pvClientAddr').innerText = document.getElementById('inClientAddr').value;
-      document.getElementById('pvSubject').innerText = "Subject: " + document.getElementById('inSubject').value;
-      document.getElementById('pvItemTitle').innerText = document.getElementById('inItemTitle').value;
-      document.getElementById('pvSpecs').innerText = document.getElementById('inSpecs').value;
-      document.getElementById('pvPricing').innerText = document.getElementById('inPricing').value;
+    // Hidden Backend URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw-ViaZSGaF0QGdIO6wej9JOUbtZQR4LmXaX8McrareIEd9PLjuD8gZiWS8eHjidf5pBg/exec";
+
+    // Auto-update serial numbers for all existing rows
+    function updateSerialNumbers() {
+      const rows = document.querySelectorAll("#tableBody tr");
+      rows.forEach((row, index) => {
+        const slCell = row.querySelector(".col-sl");
+        if (slCell) {
+          slCell.innerText = index + 1;
+        }
+      });
     }
 
-    // Initialize layout on load
-    updatePreview();
+    function addRow() {
+      const tbody = document.getElementById("tableBody");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="col-sl"></td>
+        <td class="col-item" contenteditable="true">Item Title</td>
+        <td class="col-spec" contenteditable="true">Item specifications and details...</td>
+        <td class="col-del no-print"><button class="delete-btn" title="Delete Row" onclick="deleteRow(this)">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+      updateSerialNumbers();
+    }
 
-    // Auto-save script URL locally so you don't re-type it
-    const savedUrl = localStorage.getItem('mlh_script_url');
-    if (savedUrl) document.getElementById('scriptUrl').value = savedUrl;
-
-    async function saveToGoogleSheet() {
-      const url = document.getElementById('scriptUrl').value.trim();
-      const msg = document.getElementById('status-msg');
-
-      if (!url) {
-        alert("Please paste your Google Apps Script Web App URL first!");
+    function deleteRow(btn) {
+      const tbody = document.getElementById("tableBody");
+      if (tbody.rows.length <= 1) {
+        alert("The table must have at least one item row.");
         return;
       }
-      localStorage.setItem('mlh_script_url', url);
+      btn.closest("tr").remove();
+      updateSerialNumbers();
+    }
 
-      msg.innerText = "Saving to Google Sheet...";
-      msg.style.color = "#2563eb";
+    async function saveToGoogleSheets() {
+      const saveBtn = document.getElementById("saveBtn");
+      saveBtn.innerText = "⏳ Saving...";
+      saveBtn.disabled = true;
+
+      const rows = [];
+      const trs = document.querySelectorAll("#tableBody tr");
+      trs.forEach(tr => {
+        rows.push({
+          sl: tr.cells[0].innerText.trim(),
+          item: tr.cells[1].innerText.trim(),
+          spec: tr.cells[2].innerText.trim()
+        });
+      });
 
       const payload = {
-        refNo: document.getElementById('inRefNo').value,
-        date: document.getElementById('inDate').value,
-        clientName: document.getElementById('inClientName').value,
-        clientAddress: document.getElementById('inClientAddr').value,
-        subject: document.getElementById('inSubject').value,
-        itemName: document.getElementById('inItemTitle').value,
-        specifications: document.getElementById('inSpecs').value,
-        totalAmount: document.getElementById('inPricing').value
+        refNo: document.getElementById("refNo").innerText.trim(),
+        date: document.getElementById("quoteDate").innerText.trim(),
+        subject: document.getElementById("subjectTitle").innerText.trim(),
+        customer: document.getElementById("customerBox").innerText.trim(),
+        intro: document.getElementById("salutationIntro").innerText.trim(),
+        items: rows,
+        terms: document.getElementById("termsBox").innerText.trim(),
+        notes: document.getElementById("notesBox").innerText.trim()
       };
 
       try {
-        await fetch(url, {
+        const res = await fetch(SCRIPT_URL, {
           method: "POST",
-          mode: "no-cors", // Bypasses browser CORS checks for Google Apps Script
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
-        msg.innerText = "Saved to Google Sheet successfully!";
-        msg.style.color = "#16a34a";
+        const result = await res.json();
+        if (result.status === "success") {
+          alert("Quotation saved successfully to Google Sheets!");
+        } else {
+          alert("Error saving: " + (result.message || "Unknown error"));
+        }
       } catch (err) {
-        msg.innerText = "Error saving data: " + err.message;
-        msg.style.color = "#dc2626";
+        alert("Failed to connect to Google Sheets. Verify Web App deployment.");
+      } finally {
+        saveBtn.innerText = "💾 Save to Sheet";
+        saveBtn.disabled = false;
+      }
+    }
+
+    async function loadFromGoogleSheets() {
+      const refNo = document.getElementById("lookupRef").value.trim();
+      if (!refNo) {
+        alert("Please enter a Reference Number.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=get&refNo=${encodeURIComponent(refNo)}`);
+        const result = await res.json();
+
+        if (result.status === "success") {
+          const d = result.data;
+          document.getElementById("refNo").innerText = d.refNo || "";
+          document.getElementById("quoteDate").innerText = d.date || "";
+          document.getElementById("subjectTitle").innerText = d.subject || "";
+          document.getElementById("customerBox").innerText = d.customer || "";
+          document.getElementById("salutationIntro").innerText = d.intro || "";
+          document.getElementById("termsBox").innerText = d.terms || "";
+          if (d.notes) document.getElementById("notesBox").innerText = d.notes;
+
+          const tbody = document.getElementById("tableBody");
+          tbody.innerHTML = "";
+          (d.items || []).forEach(it => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td class="col-sl"></td>
+              <td class="col-item" contenteditable="true">${it.item}</td>
+              <td class="col-spec" contenteditable="true">${it.spec}</td>
+              <td class="col-del no-print"><button class="delete-btn" title="Delete Row" onclick="deleteRow(this)">✕</button></td>
+            `;
+            tbody.appendChild(tr);
+          });
+          updateSerialNumbers();
+          alert("Quotation loaded successfully!");
+        } else {
+          alert("Reference Number not found.");
+        }
+      } catch (err) {
+        alert("Error fetching data from Google Sheets.");
       }
     }
   </script>
