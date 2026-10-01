@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Malabar LED House - Quotation Generator</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { margin: 0; background: #f0f2f5; display: flex; height: 100vh; }
+    
+    /* Left Entry Panel */
+    .editor-panel {
+      width: 420px;
+      background: #ffffff;
+      border-right: 1px solid #ddd;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    }
+    .editor-panel h2 { margin-top: 0; font-size: 18px; color: #1a365d; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: #4a5568; margin-bottom: 4px; }
+    .form-group input, .form-group textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;
+    }
+    .form-group textarea { resize: vertical; }
+    .btn-group { display: flex; gap: 8px; margin-top: 15px; }
+    button {
+      flex: 1; padding: 10px 12px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; transition: 0.2s;
+    }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-success { background: #16a34a; color: #fff; }
+    .btn-success:hover { background: #15803d; }
+    #status-msg { font-size: 12px; margin-top: 8px; color: #2563eb; text-align: center; }
+
+    /* Right Preview Layout (A4 Sheet matching current PDF) */
+    .preview-container {
+      flex: 1; overflow-y: auto; padding: 30px; display: flex; justify-content: center;
+    }
+    .page-a4 {
+      width: 210mm;
+      min-height: 297mm;
+      background: white;
+      padding: 16mm 20mm;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      position: relative;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #111;
+    }
+
+    /* Malabar LED Header Style */
+    .header-box { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; }
+    .company-title { font-size: 24px; font-weight: 800; letter-spacing: 0.5px; margin: 0; color: #b91c1c; }
+    .company-gst { font-weight: bold; font-size: 13px; margin: 3px 0; }
+    .company-address { font-size: 11.5px; color: #222; }
+    .company-phones { font-size: 11.5px; font-weight: bold; margin-top: 2px; }
+
+    /* Meta Info */
+    .meta-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: 600; }
+    .to-section { margin-bottom: 12px; line-height: 1.4; }
+    .subject-line { font-weight: bold; text-decoration: underline; margin: 10px 0; }
+
+    /* Table Design */
+    table.qtn-table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+    table.qtn-table th, table.qtn-table td { border: 1px solid #333; padding: 7px 9px; vertical-align: top; }
+    table.qtn-table th { background: #f3f4f6; text-align: left; font-size: 12px; }
+    .spec-list { white-space: pre-line; font-size: 12px; }
+
+    /* Bank Details & Signature */
+    .bank-box { border: 1px dashed #555; padding: 10px; width: 60%; margin-top: 15px; font-size: 11.5px; background: #fafafa; }
+    .bank-title { font-weight: bold; margin-bottom: 4px; text-decoration: underline; }
+    .footer-sign { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .sign-box { text-align: right; font-weight: bold; }
+
+    /* Print Setup for Pixel-Perfect PDF */
+    @media print {
+      body { background: white; margin: 0; padding: 0; }
+      .editor-panel { display: none !important; }
+      .preview-container { padding: 0 !important; margin: 0 !important; }
+      .page-a4 { box-shadow: none !important; margin: 0 !important; width: 100% !important; min-height: 100vh !important; }
+      @page { size: A4; margin: 10mm; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT: Form Input -->
+  <div class="editor-panel">
+    <h2>Quotation Details</h2>
+    <div class="form-group">
+      <label>Google Apps Script Web App URL</label>
+      <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <div class="form-group">
+      <label>Reference No</label>
+      <input type="text" id="inRefNo" value="QTN 2026/11/06/16R" oninput="updatePreview()">
+    </div>
+    <div class="form-group">
+      <label>Date</label>
+      <input type="text" id="inDate" value="07-09-2026" oninput="updatePreview()">
+    </div>
+    <div class="form-group">
+      <label>Client Name / Company</label>
+      <input type="text" id="inClientName" value="WALKAROO INTERNATIONAL PVT LTD" oninput="updatePreview()">
+    </div>
+    <div class="form-group">
+      <label>Client Address</label>
+      <textarea id="inClientAddr" rows="2" oninput="updatePreview()">PLOT NO. 56, INKEL, INDUSTRIAL GROWTH CENTER, OORAKAM, MELMURI PO, MALAPPURAM - 676519</textarea>
+    </div>
+    <div class="form-group">
+      <label>Subject Title</label>
+      <input type="text" id="inSubject" value="Quotation for P10 LED Display" oninput="updatePreview()">
+    </div>
+    <div class="form-group">
+      <label>Product / Item Title</label>
+      <input type="text" id="inItemTitle" value="P10 SMD LED Display Outdoor" oninput="updatePreview()">
+    </div>
+    <div class="form-group">
+      <label>Specifications (One per line)</label>
+      <textarea id="inSpecs" rows="5" oninput="updatePreview()">Module Size - 320mm x 160mm (Brand: Li Glo)
+Pixel Pitch - 10mm
+LED - SMD 2727, Red color, Brightness 3000cdm
+Control system Mobile App - Text & animation
+Optimum view distance more than 10m
+Cabinet Aluminum, Water Proof Level - IP65
+Warranty - 1 Year
+Delivery time - 7 Days after order confirmation</textarea>
+    </div>
+    <div class="form-group">
+      <label>Pricing & Commercial Terms</label>
+      <textarea id="inPricing" rows="4" oninput="updatePreview()">LED Cabinet Size: 133 cm X 37 cm (one side)
+LED Display Size: 128 cm X 32 cm (one side)
+Price: Rs 8,500 + GST 18% = Rs 10,030/-
+Payment: 50% advance, balance on delivery
+Installation & Parcel charge extra</textarea>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn-primary" onclick="window.print()">Print / Save PDF</button>
+      <button class="btn-success" onclick="saveToGoogleSheet()">Save to Sheet</button>
+    </div>
+    <div id="status-msg"></div>
+  </div>
+
+  <!-- RIGHT: Exact Letterhead Copy -->
+  <div class="preview-container">
+    <div class="page-a4">
+      <!-- Fixed Header -->
+      <div class="header-box">
+        <h1 class="company-title">MALABAR LED HOUSE</h1>
+        <div class="company-gst">GSTIN: 32DYMPS3486K1ZP</div>
+        <div class="company-address">
+          AFBA COMPLEX, PUTHIYARA ROAD, CALICUT-04<br>
+          Branch: Sadhoo Building, Fort Road, Kannur
+        </div>
+        <div class="company-phones">
+          Mob: 8289853114, 8921020922 | Kannur: 9400239470
+        </div>
+      </div>
+
+      <!-- Quotation Reference & Date -->
+      <div class="meta-row">
+        <div>Ref: <span id="pvRefNo">QTN 2026/11/06/16R</span></div>
+        <div>Date: <span id="pvDate">07-09-2026</span></div>
+      </div>
+
+      <!-- Addressed To -->
+      <div class="to-section">
+        <strong>To,</strong><br>
+        <span id="pvClientName" style="font-weight: 600;">WALKAROO INTERNATIONAL PVT LTD</span><br>
+        <span id="pvClientAddr">PLOT NO. 56, INKEL, INDUSTRIAL GROWTH CENTER, OORAKAM, MELMURI PO, MALAPPURAM - 676519</span>
+      </div>
+
+      <div class="subject-line" id="pvSubject">Subject: Quotation for P10 LED Display</div>
+
+      <p style="margin: 8px 0;">Respected Sir,</p>
+      <p style="margin: 4px 0 12px 0;">
+        We are the best provider of LED Signage in Malabar with well executed service backup. As per your requirement, we are pleased to provide you our lowest quotation for the services given below.
+      </p>
+
+      <strong>Product Details:</strong>
+      <table class="qtn-table">
+        <thead>
+          <tr>
+            <th style="width: 8%;">SL NO</th>
+            <th style="width: 32%;">Item</th>
+            <th style="width: 60%;">Specification</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><strong id="pvItemTitle">P10 SMD LED Display Outdoor</strong></td>
+            <td class="spec-list" id="pvSpecs"></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><strong>Size & Price Terms</strong></td>
+            <td class="spec-list" id="pvPricing"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Fixed Bank Details -->
+      <div class="bank-box">
+        <div class="bank-title">Bank Details:</div>
+        <strong>MALABAR LED HOUSE</strong><br>
+        Bank: <strong>BANK OF BARODA</strong><br>
+        A/C No: <strong>6879 02 0000 1223</strong><br>
+        IFSC: <strong>BARB0VJFERO</strong><br>
+        Branch: Feroke
+      </div>
+
+      <!-- Footer Signoff -->
+      <div class="footer-sign">
+        <div>
+          Thanking You,<br>
+          <em>Electricity with suitable power load should be provided by customer.</em>
+        </div>
+        <div class="sign-box">
+          For MALABAR LED HOUSE<br><br><br>
+          Authorized Signatory
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updatePreview() {
+      document.getElementById('pvRefNo').innerText = document.getElementById('inRefNo').value;
+      document.getElementById('pvDate').innerText = document.getElementById('inDate').value;
+      document.getElementById('pvClientName').innerText = document.getElementById('inClientName').value;
+      document.getElementById('pvClientAddr').innerText = document.getElementById('inClientAddr').value;
+      document.getElementById('pvSubject').innerText = "Subject: " + document.getElementById('inSubject').value;
+      document.getElementById('pvItemTitle').innerText = document.getElementById('inItemTitle').value;
+      document.getElementById('pvSpecs').innerText = document.getElementById('inSpecs').value;
+      document.getElementById('pvPricing').innerText = document.getElementById('inPricing').value;
+    }
+
+    // Initialize layout on load
+    updatePreview();
+
+    // Auto-save script URL locally so you don't re-type it
+    const savedUrl = localStorage.getItem('mlh_script_url');
+    if (savedUrl) document.getElementById('scriptUrl').value = savedUrl;
+
+    async function saveToGoogleSheet() {
+      const url = document.getElementById('scriptUrl').value.trim();
+      const msg = document.getElementById('status-msg');
+
+      if (!url) {
+        alert("Please paste your Google Apps Script Web App URL first!");
+        return;
+      }
+      localStorage.setItem('mlh_script_url', url);
+
+      msg.innerText = "Saving to Google Sheet...";
+      msg.style.color = "#2563eb";
+
+      const payload = {
+        refNo: document.getElementById('inRefNo').value,
+        date: document.getElementById('inDate').value,
+        clientName: document.getElementById('inClientName').value,
+        clientAddress: document.getElementById('inClientAddr').value,
+        subject: document.getElementById('inSubject').value,
+        itemName: document.getElementById('inItemTitle').value,
+        specifications: document.getElementById('inSpecs').value,
+        totalAmount: document.getElementById('inPricing').value
+      };
+
+      try {
+        await fetch(url, {
+          method: "POST",
+          mode: "no-cors", // Bypasses browser CORS checks for Google Apps Script
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        msg.innerText = "Saved to Google Sheet successfully!";
+        msg.style.color = "#16a34a";
+      } catch (err) {
+        msg.innerText = "Error saving data: " + err.message;
+        msg.style.color = "#dc2626";
+      }
+    }
+  </script>
+</body>
+</html>
