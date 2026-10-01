@@ -80,6 +80,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      position: relative;
     }
 
     /* Inline Edit Highlight */
@@ -110,6 +111,11 @@
       color: var(--primary-red);
       letter-spacing: 0.5px;
     }
+
+    /* Letter-specific colors for LED */
+    .led-l { color: #d31e28; }
+    .led-e { color: #198754; }
+    .led-d { color: #0d6efd; }
 
     .gstin {
       font-size: 13px;
@@ -224,7 +230,7 @@
 
     /* Footer Section */
     .footer-section {
-      margin-top: 18px;
+      margin-top: 24px;
       padding-top: 12px;
       display: flex;
       justify-content: space-between;
@@ -248,25 +254,47 @@
       margin-bottom: 2px;
     }
 
-    /* Right-aligned Signatory Box */
+    /* Signatory Box with dynamic Seal placement */
     .signatory-box {
       text-align: right;
       font-size: 13px;
-      padding-bottom: 4px;
+      position: relative;
+      min-width: 220px;
     }
 
     .signatory-box .company-name {
       font-weight: bold;
-      margin-bottom: 40px; /* Space for physical signature/stamp */
+      margin-bottom: 75px;
+    }
+
+    .stamp-container {
+      position: absolute;
+      right: 20px;
+      bottom: 12px;
+      width: 110px;
+      height: 110px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .stamp-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      mix-blend-mode: screen;
+      filter: contrast(160%) brightness(120%);
+      transform: rotate(-6deg);
     }
 
     .signatory-box .auth-sign {
+      position: relative;
       font-weight: bold;
       border-top: 1px dashed #666;
       display: inline-block;
-      padding-top: 4px;
-      min-width: 170px;
+      padding-top: 5px;
+      min-width: 180px;
       text-align: center;
+      z-index: 2;
     }
 
     /* Print Rules */
@@ -299,9 +327,13 @@
 
   <!-- Controls Panel -->
   <div class="controls-panel no-print">
-    <div style="display:flex; gap: 8px;">
+    <div style="display:flex; gap: 8px; align-items:center;">
       <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
       <button class="btn btn-success" id="saveBtn" onclick="saveToGoogleSheets()">💾 Save to Sheet</button>
+      <label class="btn btn-secondary" style="margin: 0; font-size:12px; cursor:pointer;">
+        📷 Change Seal Image
+        <input type="file" id="sealUpload" accept="image/*" style="display:none;" onchange="handleSealUpload(event)" />
+      </label>
     </div>
 
     <div class="lookup-box">
@@ -315,7 +347,9 @@
     <div>
       <!-- Header -->
       <div class="header">
-        <div class="company-title">MALABAR LED HOUSE</div>
+        <div class="company-title">
+          MALABAR <span class="led-l">L</span><span class="led-e">E</span><span class="led-d">D</span> HOUSE
+        </div>
         <div class="gstin">GSTIN: 32DYMPS3486K1ZP</div>
         <div class="sub-details">
           AFBA COMPLEX, PUTHIYARA ROAD, CALICUT-04<br />
@@ -328,13 +362,13 @@
       <div class="meta-section">
         <div class="subject-title" id="subjectTitle" contenteditable="true">Quotation for P10 LED Display</div>
         <div class="ref-date-row">
-          <div>Ref: <span id="refNo" contenteditable="true">QTN 2026/11/06/16R</span></div>
-          <div>Date: <span id="quoteDate" contenteditable="true">07-09-2026</span></div>
+          <div>Ref: <span id="refNo" contenteditable="true">QTN</span></div>
+          <div>Date: <span id="quoteDate" contenteditable="true"></span></div>
         </div>
 
         <div style="font-weight: bold;">To,</div>
-        <div class="customer-box" id="customerBox" contenteditable="true">WALKAROO INTERNATIONAL PVT LTD PLOT NO. 56, INKEL,
-INDUSTRIAL GROWTH CENTER, OORAKAM, MELMURI PO, MALAPPURAM - 676519</div>
+        <div class="customer-box" id="customerBox" contenteditable="true">Client Name
+Client Address</div>
 
         <div class="salutation" id="salutationIntro" contenteditable="true">Respected Sir,
 We are the best provider of LED Signage in Malabar with well-executed service backup. As per your requirement, we are pleased to provide you our lowest quotation for the services given below:</div>
@@ -355,8 +389,8 @@ We are the best provider of LED Signage in Malabar with well-executed service ba
           <tr>
             <td class="col-sl">1</td>
             <td class="col-item" contenteditable="true">P10 SMD LED Display Outdoor</td>
-            <td class="col-spec" contenteditable="true">• Module Size - 320mm x 160mm (Brand: Li Glo)
-• Pixel Pitch - 10mm
+            <td class="col-spec" contenteditable="true">• Module Size - 320mm x 160mm (Brand: _)
+• Pixel Pitch - _mm
 • LED - SMD 2727, Red color, Brightness 3000cd/m²
 • Control system: Mobile App - Text & animation
 • Optimum view distance: more than 10m
@@ -368,10 +402,10 @@ We are the best provider of LED Signage in Malabar with well-executed service ba
           <tr>
             <td class="col-sl">2</td>
             <td class="col-item" contenteditable="true">Size & Price</td>
-            <td class="col-spec" contenteditable="true">LED Cabinet Size: 133 cm X 37 cm - one side
-LED Display Size: 128 cm X 32 cm - one side
+            <td class="col-spec" contenteditable="true">LED Cabinet Size: __ cm X __ cm - one side
+LED Display Size: __ cm X __cm - one side
 
-Amount: Rs 8,500 + GST 18% = Rs 10,030/-</td>
+Amount: Rs __ + GST 18% = Rs ___/-</td>
             <td class="col-del no-print"><button class="delete-btn" title="Delete Row" onclick="deleteRow(this)">✕</button></td>
           </tr>
         </tbody>
@@ -391,7 +425,7 @@ Amount: Rs 8,500 + GST 18% = Rs 10,030/-</td>
 • Above mentioned rates are inclusive of all taxes unless specified otherwise.</div>
     </div>
 
-    <!-- Footer: Bank Details (Left Fitted) & Signatory (Right) -->
+    <!-- Footer: Bank Details & Signatory with Seal Image -->
     <div class="footer-section">
       <div class="bank-box">
         <strong>Bank Details:</strong><br />
@@ -404,16 +438,45 @@ Amount: Rs 8,500 + GST 18% = Rs 10,030/-</td>
 
       <div class="signatory-box">
         <div class="company-name">For MALABAR LED HOUSE</div>
+        <div class="stamp-container">
+          <img id="stampImage" class="stamp-img" src="images/seal.png" alt="Malabar LED House Stamp & Sign" />
+        </div>
         <div class="auth-sign">Authorized Signatory</div>
       </div>
     </div>
   </div>
 
   <script>
-    // Hidden Backend URL
+    // Configured Web App Script URL
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw-ViaZSGaF0QGdIO6wej9JOUbtZQR4LmXaX8McrareIEd9PLjuD8gZiWS8eHjidf5pBg/exec";
 
-    // Auto-update serial numbers for all existing rows
+    // Set today's date automatically if empty (DD-MM-YYYY format)
+    window.addEventListener("DOMContentLoaded", () => {
+      const dateEl = document.getElementById("quoteDate");
+      if (!dateEl.innerText.trim()) {
+        const today = new Date();
+        const d = String(today.getDate()).padStart(2, '0');
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const y = today.getFullYear();
+        dateEl.innerText = `${d}-${m}-${y}`;
+      }
+    });
+
+    // Handle local image upload for seal
+    function handleSealUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.getElementById("stampImage");
+          img.src = e.target.result;
+          img.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // Auto-update sequential serial numbers
     function updateSerialNumbers() {
       const rows = document.querySelectorAll("#tableBody tr");
       rows.forEach((row, index) => {
